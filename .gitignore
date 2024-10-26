@@ -2,3 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# C extensions
+*.so
+*.zip
+*.gz
+*.csv
+*.gzip
+*.feather
+*.geofeather
+*.parquet
+*.geoparquet
+data/
