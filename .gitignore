@@ -13,4 +13,6 @@
 *.geofeather
 *.parquet
 *.geoparquet
+*.geojson
+*.xlsx
 data/
