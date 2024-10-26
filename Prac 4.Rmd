@@ -1,0 +1,13 @@
+---
+title: "Prac 4"
+author: "dnkimani"
+date: "2024-10-25"
+output: html_document
+---
+```{r echo=FALSE}
+library(terra)
+jan<-terra::rast("C:/Users/HP/OneDrive - University College London/Urban Spatial Science/GIS CASA0005/wk3/Prac3/Prac3_data/wc2.1_5m_tavg/wc2.1_5m_tavg_01.tif")
+# have a look at the raster layer jan
+plot(jan)
+```
+
