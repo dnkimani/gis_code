@@ -1,0 +1,78 @@
+---
+title: "World Gender Inequality"
+author: "dnkimani"
+date: "2024-10-26"
+output: html_document
+---
+
+```{r Loading Packages, include=FALSE}
+# loading packages
+library(sf)
+library(here)
+library(tidyverse)
+library(janitor)
+library(countrycode)
+library(tmap)
+library(tmaptools)
+```
+
+```{r Loading Datasets}
+# reading my data in
+gii_data <- read_csv(here("hw4_data","HDR23-24_Composite_indices_complete_time_series.csv"),
+         col_names = TRUE,
+         col_select = c(iso3,country,gii_2010,gii_2019),
+         locale = locale(encoding = "latin1")) #Latin 1 encoding-display correct chr
+
+world_vectors <- st_read(here("hw4_data", "World_Countries_(Generalized)_9029012925078512962.geojson"))
+```
+
+
+```{r Data Summary View, echo=FALSE}
+# checking out my data 
+Datatypelist <- gii_data %>% 
+  summarise_all(class) %>%
+  pivot_longer(everything(), 
+               names_to="All_variables", 
+               values_to="Variable_class")
+Datatypelist
+
+summary(gii_data)
+```
+
+```{r Data Cleaning}
+# cleaning my data
+#getting rid of world summary data at the bottom of my dataset,
+gii_cnt_data <- gii_data %>%
+  clean_names(., case = "snake") %>%
+  dplyr::filter(!str_detect(iso3,  "\\.")) 
+# !sign before str_detect() negates the search, "\\." means literal period (.)
+
+world_vectors <- world_vectors %>%
+  clean_names()
+
+```
+
+```{r Continued Data Wrangling}
+# data manipulation
+gii_cnt_data <- gii_cnt_data %>%
+  mutate(gii_diff = gii_2010 - gii_2019)%>% #calculating difference
+  #adding a column to act as the merge ID, using countrycode() to convert the iso3 to iso2
+  mutate(iso2 = countrycode(iso3, origin = "iso3c", destination = "iso2c"))
+
+# merging the data sets
+merged_gii <- gii_cnt_data %>%
+  left_join(.,
+            world_vectors,
+            by = c("iso2" = "iso")) %>%
+  select(c(1:6,11)) %>%
+  filter(!is.na(gii_diff)) # removing blank values based on the gii_diff column
+```
+
+```{r Plots}
+#converting my tibble into a simple feature (sf)
+world_gii_map <- st_as_sf(merged_gii)
+tmap_mode("plot")
+qtm(world_gii_map,
+    fill = "gii_diff")
+```
+
