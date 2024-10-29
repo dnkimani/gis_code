@@ -71,8 +71,9 @@ merged_gii <- gii_cnt_data %>%
 ```{r Plots}
 #converting my tibble into a simple feature (sf)
 world_gii_map <- st_as_sf(merged_gii)
+
+# plotting my sf into a very simple tmap. For week 5 assignment maybe try ggplot or something more complex than the tmap?
 tmap_mode("plot")
 qtm(world_gii_map,
     fill = "gii_diff")
 ```
-
