@@ -344,3 +344,17 @@ map<- leaflet(Joined) %>%
 map
 ```
 
+```{r Spatial Joins explained}
+# this is what was explained in Prac6 section: 6.5.4
+# attempting a spatial join, by default, it uses st_intersects which is problematic. See below
+all_accomodation <- st_join(Hotels,Airbnb)
+
+head(all_accomodation)
+
+# lets correct this by changing the argument to st_equals
+all_accomodation <- st_join(Hotels, Airbnb, join = st_equals)
+
+head(all_accomodation)
+
+```
+
