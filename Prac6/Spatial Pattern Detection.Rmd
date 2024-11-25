@@ -159,15 +159,18 @@ BluePlaquesSub.ppp %>%
 
 ## 2 Point pattern analysis
 ### 2.1 Kernel Density Estimation
+One way of summarising point data  is by plotting the density of your points under a window called a ‘Kernel’. The size and shape of the Kernel affects the density pattern produced, but it is very easy to produce a Kernel Density Estimation (KDE) map from a ppp object using the density() function.
 ```{r}
 # size and shape of the Kernel affects the density pattern produced but it is
 # easy to produce a Kernel Density Estimation (KDE) map from a ppp object using the density() function
 BluePlaquesSub.ppp %>%
-  density(., sigma=200) %>% # sigma value sets the diameter of the Kernel
+  density(., sigma=500) %>% # sigma value sets the diameter of the Kernel
   plot()
 ```
 
 ## 2.2 Quadrat Analysis
+We are interested in knowing whether the distribution of points in our study area differs from ‘complete spatial randomness’ — CSR. 
+The most basic test of CSR is a quadrat analysis. We can carry out a simple quadrat analysis on our data using the `quadrat count` function in `spatstat`. Note, I wouldn’t recommend doing a quadrat analysis in any real piece of analysis you conduct, but it is useful for starting to understand the Poisson distribution…
 ```{r}
 # ‘complete spatial randomness’ — CSR most basic test is the quadrat analysis
 #First plot the points
@@ -196,7 +199,8 @@ Qcount <- BluePlaquesSub.ppp %>%
 Qcount %>% 
   summarise_all(class)
 ```
- 
+
+OK, so we now have a frequency table — next we need to calculate our expected values. The formula for calculating expected probabilities based on the Poisson distribution: 
 Poisson Distribution formula Pr... where:
 
 x = var1 is the number of occurrences
@@ -257,7 +261,10 @@ plot(BluePlaquesSub.ppp,pch=16,cex=0.5, main="Blue Plaques in Harrow")
 plot(teststats, add=T, col = "red")
 ```
 
+In the new plot, we can see three figures for each quadrant. The top-left figure is the observed count of points; the top-right is the Poisson expected number of points; the bottom value is the residual value (also known as Pearson residual value), or (Observed - Expected) / Sqrt(Expected).
+
 ### 2.3 Experimenting ... 
+Try running a quadrant analysis for different grid arrangements (2 x 2, 3 x 3, 10 x 10 etc.) — how does this affect your results?
 
 ### 2.4 Ripley’s K
 ```{r}
