@@ -23,6 +23,7 @@ Londonborough <- st_read(here("prac5_data",
                               "statistical-gis-boundaries-london",
                               "ESRI",
                               "London_Borough_Excluding_MHW.shp")) %>%
+  select(c(-SUB_2009,-SUB_2006)) %>%
   st_transform(., 27700) # transforming the CRS of this data set
 ```
 
@@ -31,7 +32,7 @@ Londonborough <- st_read(here("prac5_data",
 OSM <- st_read(here("prac5_data", 
                     "greater-london-latest-free.shp", 
                     "gis_osm_pois_a_free_1.shp")) %>%
-  st_transform(., 27700) %>%
+    st_transform(., 27700) %>%
   #select hotels only
   dplyr::filter(fclass == 'hotel')
 ```
@@ -85,6 +86,23 @@ UK_outline <- st_read(here::here("prac5_data",
                                  "gadm41_GBR_0.shp")) %>%
   st_transform(., 27700)
 ```
+Example code to unzip a .gz file
+```{r eval=FALSE, include=FALSE}
+# we will first, unzip the Airbnb file
+library(fs)
+library(R.utils)
+
+# List and process .gz files
+listfiles <- dir_info(here::here("prac5_data")) %>%
+  dplyr::filter(str_detect(path, ".gz")) %>%
+  pull(path)
+
+# Extract .gz files
+lapply(listfiles, function(file) {
+  gunzip(file, remove = FALSE)  # Extract while keeping the original .gz file
+})
+```
+
 
 ```{r}
 # read in the .csv
@@ -93,13 +111,16 @@ UK_outline <- st_read(here::here("prac5_data",
 Airbnb <- read_csv(here("prac5_data", 
                         "listings.csv")) %>%
   # longitude is considered x value here, latitude is y
-  st_as_sf(., coords = c("longitude", "latitude"), 
-                   crs = 4326) %>%
+  st_as_sf(., 
+           coords = c("longitude", "latitude"), 
+           crs = 4326) %>%
     st_transform(., 27700)%>%
     #select entire places that are available all year
     filter(room_type == 'Entire home/apt' & availability_365 =='365')
 
-
+```
+Lets make a function to join our data. It will aggregate counts of the number of times a borough appears
+```{r}
 # make a function for the join
 # functions are covered in practical 7
 # but see if you can work out what is going on
@@ -109,46 +130,63 @@ Airbnb <- read_csv(here("prac5_data",
 Joinfun <- function(data1, data2){
 
 output<- data1%>%
-  st_join(data2,.) %>%
-  add_count(GSS_CODE, name="hotels_in_borough") 
+  st_join(data2,.) %>% # notice the second data set is on the left
+  add_count(GSS_CODE, name="hotels_in_borough") # function creating counts of GSS_CODE and storing in column "hotels_in_borough" 
 
   return(output)
 }
+```
 
+Use the new function to join our data sets
+```{r}
 # use the function for hotels
 Hotels <- Joinfun(OSM, Londonborough)
 
 # then for airbnb
 # this is incorrect - change to airbnb2 to look at result
 Airbnb <- Joinfun(Airbnb, Londonborough)
- 
+```
+
+```{r}
 Worldcities2 <- Worldcities %>%
   filter(CNTRY_NAME=='United Kingdom'&
            Worldcities$CITY_NAME=='Birmingham'|
            Worldcities$CITY_NAME=='London'|
            Worldcities$CITY_NAME=='Edinburgh')
+```
 
-newbb <- c(xmin=-296000, ymin=5408, xmax=655696, ymax=1000000)
+```{r}
+newbb <- c(xmin=-296000, ymin=5408, xmax=655696, ymax=1000000) # setting a bounding box
   
 UK_outlinecrop <- UK_outline$geometry %>%
-  st_crop(., newbb)
+  st_crop(., newbb) # doing a spatial crop using the new bounding box
+```
 
+```{r}
 Hotels <- Hotels %>%
   #at the moment each hotel is a row for the borough
   #we just want one row that has number of airbnbs
-  group_by(., GSS_CODE, NAME)%>%
+  group_by(., GSS_CODE, NAME) %>%
   summarise(`Accomodation count` = unique(hotels_in_borough))
+```
 
+```{r}
 Airbnb <- Airbnb %>%
   group_by(., GSS_CODE, NAME)%>%
   summarise(`Accomodation count` = unique(hotels_in_borough))
 ```
+
+```{r}
+Hotels %>%
+  filter(NAME=="Sutton")
+```
+
+
 ### Making the map
 ```{r}
 tmap_mode("plot")
 
-# set the breaks
-# for our mapped data
+# set the breaks for our mapped data
 breaks = c(0, 5, 12, 26, 57, 286) 
 
 # plot each map
@@ -189,7 +227,7 @@ t=tmap_arrange(tm1, tm2, tm3, legend, ncol=2)
 t
 ```
 
-### Mapping using the grid package
+### Arranging maps using the grid package
 ```{r}
 #library(grid)
 # erases the current device or moves to a new page 
@@ -231,14 +269,15 @@ main <- tm_shape(Airbnb, bbbox = Londonbb) +
   tm_layout(inner.margin=c(0.02,0.02,0.02,0.2))
 
 
-inset = tm_shape(UK_outlinecrop) + tm_polygons() +
+inset = tm_shape(UK_outlinecrop) + 
+  tm_polygons() +
   tm_shape(Londonbb)+ 
   tm_borders(col = "grey40", lwd = 3)+ ##lwd==line width
     tm_layout(frame=FALSE,
             bg.color = "transparent")+
   tm_shape(Worldcities2) +
   tm_symbols(col = "red", scale = .5)+
-  tm_text("CITY_NAME", xmod=-1.5, ymod=-0.5)
+  tm_text("CITY_NAME", xmod=-1.5, ymod=-0.5) # positioning of the text with xmod and ymod, -ve means left and down respectively
 
 
 #library(grid)
@@ -352,7 +391,7 @@ all_accomodation <- st_join(Hotels,Airbnb)
 head(all_accomodation)
 
 # lets correct this by changing the argument to st_equals
-all_accomodation <- st_join(Hotels, Airbnb, join = st_equals)
+all_accomodation2 <- st_join(Hotels, Airbnb, join = st_equals)
 
 head(all_accomodation)
 
