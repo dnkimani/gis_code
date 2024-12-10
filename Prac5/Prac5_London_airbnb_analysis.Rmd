@@ -393,7 +393,7 @@ head(all_accomodation)
 # lets correct this by changing the argument to st_equals
 all_accomodation2 <- st_join(Hotels, Airbnb, join = st_equals)
 
-head(all_accomodation)
+head(all_accomodation2)
 
 ```
 
